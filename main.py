@@ -25,12 +25,43 @@ def preprocess_image(image):
 def classify_image(model, image):
     try:
         processed_image = preprocess_image(image)
-        predictions = model.predict(preprocess_image)
-        decode_predictions = decode_predictions(predictions, top=3)[0]
-        return decode_predictions
-    
-    except exception as e :
+        predictions = model.predict(processed_image)
+        decoded = decode_predictions(predictions, top=3)[0]
+        return decoded
+    except Exception as e:
         st.error(f"Error classifying image: {str(e)}")
         return None
 
 
+def main():
+    st.set_page_config(page_title="AI Image Classifier", page_icon="🖼️", layout="centered")
+    st.title("AI Image Classifier")
+    st.write("Upload an image and let AI tell you what is in it!")
+
+    @st.cache_resource
+    def load_cached_model():
+        return load_model()
+    
+    model = load_cached_model()
+
+    upload_file = st.file_uploader("Choose an image...", type=["jpg", "png"])
+
+    if upload_file is not None:
+        image = st.image(
+            upload_file, caption="Uploaded Image", use_container_width=True
+        )
+        btn = st.button("Classify Image")
+
+        if btn:
+            with st.spinner("Analyzing Image..."):
+                image = Image.open(upload_file)
+                predictions = classify_image(model, image)
+
+            if predictions:
+                st.subheader("Predictions")
+                for _, label, score in predictions:
+                    st.write(f"**{label}**: {score:.2%}")
+
+
+if __name__ == "__main__":
+    main()
